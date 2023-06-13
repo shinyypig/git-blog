@@ -3,6 +3,7 @@ package router
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,23 +12,36 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/russross/blackfriday/v2"
+	"github.com/sosedoff/gitkit"
 )
 
 const dataDir = "data/"
+const repoDir = "git/"
 const headerTmplPath = dataDir + ".config/templates/header.tmpl.html"
 const indexTmplPath = dataDir + ".config/templates/index.tmpl.html"
 const postsTmplPath = dataDir + ".config/templates/posts.tmpl.html"
 const postTmplPath = dataDir + ".config/templates/post.tmpl.html"
-
-type Config struct {
-	Port   string
-	Title  string
-	Header string
-}
+const postListPath = dataDir + ".pages/postsList.json"
 
 var config Config
 
-func BlogServer() *chi.Mux {
+type Config struct {
+	AnaylzePostsOnStart bool
+	BlogHeader          string
+	BlogTitle           string
+	PostDefaultState    string
+	GitPassword         string
+	GitUserName         string
+	WebPort             string
+	WebIP               string
+}
+
+type MyGitServer struct {
+	originalServer   *gitkit.Server
+	additionalHander func(w http.ResponseWriter, r *http.Request)
+}
+
+func RunBlogServer() {
 	configJson, _ := os.ReadFile(dataDir + ".config/config.json")
 	json.Unmarshal(configJson, &config)
 
@@ -35,19 +49,66 @@ func BlogServer() *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+".config/static/"))))
-
+	gitServer := createGitServer()
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", getIndex)
-		r.Get("/posts", getPosts)
 		r.Get("/{pageName}", getPage)
-		r.Get("/publish", getPublish)
 		r.Get("/posts/{postName}", getPost)
 		r.Get("/posts/{postName}/*", servePostAssets)
+		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+".config/static/"))))
+		// git sevice
+		r.Handle("/{gitName}/info/*", gitServer)
+		r.Handle("/{gitName}/git-receive-pack", gitServer)
+		r.Handle("/{gitName}/git-upload-pack", gitServer)
 	})
 
-	return r
-	// http.ListenAndServe("127.0.0.1:"+config.Port, r)
+	log.Println("Starting server on " + config.WebIP + ":" + config.WebPort)
+	err := http.ListenAndServe(config.WebIP+":"+config.WebPort, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func createGitServer() *MyGitServer {
+	hooks := &gitkit.HookScripts{
+		PreReceive: `echo "Hello World!"`,
+	}
+
+	originalServer := gitkit.New(gitkit.Config{
+		Dir:        "git/",
+		AutoCreate: true,
+		AutoHooks:  true,
+		Auth:       true,
+		Hooks:      hooks,
+	})
+
+	originalServer.AuthFunc = func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
+		log.Println("user auth request for repo:", cred.Username, cred.Password, req.RepoName)
+		return cred.Username == config.GitUserName && cred.Password == config.GitPassword, nil
+	}
+
+	if err := originalServer.Setup(); err != nil {
+		log.Fatal(err)
+	}
+
+	return &MyGitServer{
+		originalServer:   originalServer,
+		additionalHander: gitUpdate,
+	}
+}
+
+func (s *MyGitServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.originalServer.ServeHTTP(w, r)
+	s.additionalHander(w, r)
+}
+
+func gitUpdate(w http.ResponseWriter, r *http.Request) {
+	if strings.HasSuffix(r.URL.Path, "git-receive-pack") {
+		gitName := chi.URLParam(r, "gitName")
+		log.Printf("git-receive-pack: %s", gitName)
+		extractGitData(gitName)
+		updatePost(gitName, posts)
+	}
 }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
@@ -61,9 +122,9 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	htmlContent := blackfriday.Run(content)
 	htmlContent = []byte(replaceImagePaths(string(htmlContent), "index"))
 
-	posts := getPostsFromDataSource()
-	if len(posts) > 5 {
-		posts = posts[:5]
+	recentPosts := publicPosts
+	if len(recentPosts) > 5 {
+		recentPosts = recentPosts[:5]
 	}
 
 	tmpl, err := template.ParseFiles(
@@ -82,10 +143,10 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		MarkdownHTML template.HTML
 		Posts        []Post
 	}{
-		Title:        config.Title,
-		Header:       config.Header,
+		Title:        config.BlogTitle,
+		Header:       config.BlogHeader,
 		MarkdownHTML: template.HTML(htmlContent),
-		Posts:        posts,
+		Posts:        recentPosts,
 	}
 
 	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
@@ -101,46 +162,14 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getPosts(w http.ResponseWriter, r *http.Request) {
-	posts := getPostsFromDataSource()
-
-	tmpl, err := template.ParseFiles(
-		headerTmplPath,
-		postsTmplPath,
-	)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data := struct {
-		Title  string
-		Header string
-		Posts  []Post
-	}{
-		Title:  config.Title + " - Posts",
-		Header: config.Header,
-		Posts:  posts,
-	}
-
-	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = tmpl.ExecuteTemplate(w, "posts.tmpl.html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func getPage(w http.ResponseWriter, r *http.Request) {
 	pageName := chi.URLParam(r, "pageName")
-	content, err := os.ReadFile(dataDir + ".pages/" + pageName + ".md")
+	if pageName == "posts" {
+		getPosts(w, r)
+		return
+	}
 
+	content, err := os.ReadFile(dataDir + ".pages/" + pageName + ".md")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -154,8 +183,8 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		Header       string
 		MarkdownHTML template.HTML
 	}{
-		Title:        config.Title + " - " + pageName,
-		Header:       config.Header,
+		Title:        config.BlogTitle + " - " + pageName,
+		Header:       config.BlogHeader,
 		MarkdownHTML: template.HTML(htmlContent),
 	}
 
@@ -181,8 +210,53 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getPosts(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles(
+		headerTmplPath,
+		postsTmplPath,
+	)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Title  string
+		Header string
+		Posts  []Post
+	}{
+		Title:  config.BlogTitle + " - Posts",
+		Header: config.BlogHeader,
+		Posts:  publicPosts,
+	}
+
+	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "posts.tmpl.html", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func getPost(w http.ResponseWriter, r *http.Request) {
 	postName := chi.URLParam(r, "postName")
+
+	// check if the post is public
+	postInfo, err := getPostInfo(postName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if postInfo.State != "public" {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
 
 	content, err := os.ReadFile(dataDir + postName + "/README.md")
 	if err != nil {
@@ -203,12 +277,10 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts := getPostsFromDataSource()
-
 	// find the post in the list of posts
 	var post Post
 	for _, p := range posts {
-		if p.Path == "posts/"+postName {
+		if p.Name == postName {
 			post = p
 			break
 		}
@@ -219,8 +291,8 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 		Header       string
 		MarkdownHTML template.HTML
 	}{
-		Title:        config.Header + " - " + post.Title,
-		Header:       config.Header,
+		Title:        config.BlogHeader + " - " + post.Title,
+		Header:       config.BlogHeader,
 		MarkdownHTML: template.HTML(htmlContent),
 	}
 
@@ -237,35 +309,9 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getPublish(w http.ResponseWriter, r *http.Request) {
-	err := UpdatePosts()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	} else {
-		w.Write([]byte("Published"))
-	}
-}
-
 func servePostAssets(w http.ResponseWriter, r *http.Request) {
 	postName := chi.URLParam(r, "postName")
 	http.StripPrefix("/posts/"+postName+"/", http.FileServer(http.Dir(dataDir+postName+"/"))).ServeHTTP(w, r)
-}
-
-func getPostsFromDataSource() []Post {
-	// read the posts list from json file
-	postList, err := os.ReadFile(dataDir + "postsList.json")
-	if err != nil {
-		return []Post{}
-	}
-	// convert the json to []Post
-	var posts []Post
-	err = json.Unmarshal(postList, &posts)
-	if err != nil {
-		return []Post{}
-	}
-
-	return posts
 }
 
 func replaceImagePaths(htmlContent string, dirPath string) string {
