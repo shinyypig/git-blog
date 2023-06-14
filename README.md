@@ -48,7 +48,6 @@ If you want to install it as a service, you can use the following command:
 
 ```bash
 cp gitblog.service /etc/systemd/system/ && systemctl daemon-reload
-
 ```
 
 Before you copy the service file, you should edit it to make sure the `WorkingDirectory` and `ExecStart` are correct in `gitblog.service`. The default file looks like this:
