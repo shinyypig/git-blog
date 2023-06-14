@@ -34,15 +34,15 @@ go build
 
 Or you can use the `build.sh` script to build it (only tested in debain):
 
-````bash
+```bash
 sh build.sh
-```cd git
+```
 
 If success, you will get a `gitblog` executable file in the folder. You can run it directly:
 
 ```bash
 ./gitblog
-````
+```
 
 If you want to install it as a service, you can use the following command:
 
