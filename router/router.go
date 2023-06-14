@@ -21,7 +21,7 @@ import (
 const dataDir = "data/"
 const repoDir = "git/"
 const tmplPath = dataDir + ".config/templates/*.tmpl.html"
-const postListPath = dataDir + "postsList.json"
+const postListPath = dataDir + ".pages/postsList.json"
 
 var faviconFiles = map[string]string{
 	"/favicon.ico":                ".config/static/favicon/favicon.ico",
@@ -125,7 +125,7 @@ func gitUpdate(w http.ResponseWriter, r *http.Request) {
 		gitName := chi.URLParam(r, "gitName")
 		log.Printf("git-receive-pack: %s", gitName)
 		extractGitData(gitName)
-		updatePost(gitName, posts)
+		updatePost(gitName)
 	}
 }
 

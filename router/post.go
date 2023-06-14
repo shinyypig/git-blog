@@ -34,11 +34,6 @@ func checkAllPosts() error {
 		return err
 	}
 
-	// for _, file := range files {
-	// 	if file.IsDir() {
-
-	// 	}
-	// }
 	posts = []Post{}
 	for _, file := range files {
 		if file.IsDir() {
@@ -118,10 +113,10 @@ func getPostInfo(name string) (Post, error) {
 	return post, nil
 }
 
-func updatePost(name string, posts []Post) []Post {
+func updatePost(name string) []Post {
 	post, err := getPostInfo(name)
 	if err != nil || post.State == "delete" {
-		posts = deletePost(name, posts)
+		posts = deletePost(name)
 	} else {
 		flag := false
 		for i, p := range posts {
@@ -143,7 +138,7 @@ func updatePost(name string, posts []Post) []Post {
 	return posts
 }
 
-func deletePost(name string, posts []Post) []Post {
+func deletePost(name string) []Post {
 	for i, post := range posts {
 		if post.Name == name {
 			posts = append(posts[:i], posts[i+1:]...)
@@ -307,6 +302,8 @@ func getPostsFromJson() {
 }
 
 func AnaylzePosts() {
+	extractGitData(".pages")
+	extractGitData(".config")
 	if config.AnaylzePostsOnStart {
 		extractAllGitData()
 		checkAllPosts()
