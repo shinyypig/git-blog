@@ -262,17 +262,18 @@ func extractGitData(name string) {
 		}
 	}
 
+	// set HEAD to main branch
+	cmd := exec.Command("git", "-C", repoDir+name, "symbolic-ref", "HEAD", "refs/heads/main")
+	cmd.Run()
+
 	// Clone the repo
-	cmd := exec.Command("git", "clone", repoDir+name, targetDir)
-	err := cmd.Run()
-	if err != nil {
-		log.Fatalf("Failed to clone the repository: %v", err)
-	}
+	cmd = exec.Command("git", "clone", repoDir+name, targetDir)
+	cmd.Run()
 
 	// add local repo for _pages and remove the .git directory except the _pages folder
 	if name != "_pages" {
 		gitDir := filepath.Join(targetDir, ".git")
-		err = os.RemoveAll(gitDir)
+		err := os.RemoveAll(gitDir)
 		if err != nil {
 			log.Fatalf("Failed to remove .git directory: %v", err)
 		}
@@ -315,7 +316,7 @@ func AnaylzePosts() {
 		checkAllPosts()
 		log.Println("All posts checked")
 	} else {
-		getPostsFromJson()
+		checkAllPosts()
 		log.Println("Skip anaylzing posts")
 	}
 }
