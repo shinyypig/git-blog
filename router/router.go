@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -9,19 +10,27 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/russross/blackfriday/v2"
 	"github.com/sosedoff/gitkit"
+	"github.com/sourcegraph/syntaxhighlight"
 )
 
 const dataDir = "data/"
 const repoDir = "git/"
-const headerTmplPath = dataDir + ".config/templates/header.tmpl.html"
-const indexTmplPath = dataDir + ".config/templates/index.tmpl.html"
-const postsTmplPath = dataDir + ".config/templates/posts.tmpl.html"
-const postTmplPath = dataDir + ".config/templates/post.tmpl.html"
+const tmplPath = dataDir + ".config/templates/*.tmpl.html"
 const postListPath = dataDir + ".pages/postsList.json"
+
+var faviconFiles = map[string]string{
+	"/favicon.ico":                ".config/static/favicon/favicon.ico",
+	"/favicon-16x16.png":          ".config/static/favicon/favicon-16x16.png",
+	"/favicon-32x32.png":          ".config/static/favicon/favicon-32x32.png",
+	"/apple-touch-icon.png":       ".config/static/favicon/apple-touch-icon.png",
+	"/android-chrome-192x192.png": ".config/static/favicon/android-chrome-192x192.png",
+	"/android-chrome-512x512.png": ".config/static/favicon/android-chrome-512x512.png",
+}
 
 var config Config
 
@@ -49,6 +58,8 @@ func RunBlogServer() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// include html templates folder
+
 	gitServer := createGitServer()
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", getIndex)
@@ -60,6 +71,12 @@ func RunBlogServer() {
 		r.Handle("/{gitName}/info/*", gitServer)
 		r.Handle("/{gitName}/git-receive-pack", gitServer)
 		r.Handle("/{gitName}/git-upload-pack", gitServer)
+		// favicon
+		for route, path := range faviconFiles {
+			r.Get(route, func(w http.ResponseWriter, r *http.Request) {
+				http.ServeFile(w, r, dataDir+path)
+			})
+		}
 	})
 
 	log.Println("Starting server on " + config.WebIP + ":" + config.WebPort)
@@ -119,19 +136,20 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlContent := blackfriday.Run(content)
-	htmlContent = []byte(replaceImagePaths(string(htmlContent), "index"))
+	htmlContent := toHTML(content)
 
 	recentPosts := publicPosts
 	if len(recentPosts) > 5 {
 		recentPosts = recentPosts[:5]
 	}
 
-	tmpl, err := template.ParseFiles(
-		headerTmplPath,
-		indexTmplPath,
-	)
+	files, err := filepath.Glob(tmplPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -147,12 +165,6 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		Header:       config.BlogHeader,
 		MarkdownHTML: template.HTML(htmlContent),
 		Posts:        recentPosts,
-	}
-
-	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "index.tmpl.html", data)
@@ -174,9 +186,7 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	htmlContent := blackfriday.Run(content)
-	htmlContent = []byte(replaceImagePaths(string(htmlContent), ".pages"))
+	htmlContent := toHTML(content)
 
 	data := struct {
 		Title        string
@@ -188,16 +198,13 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		MarkdownHTML: template.HTML(htmlContent),
 	}
 
-	tmpl, err := template.ParseFiles(
-		headerTmplPath,
-		postTmplPath,
-	)
+	files, err := filepath.Glob(tmplPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
+	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -211,11 +218,13 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPosts(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(
-		headerTmplPath,
-		postsTmplPath,
-	)
+	files, err := filepath.Glob(tmplPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -229,12 +238,6 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		Title:  config.BlogTitle + " - Posts",
 		Header: config.BlogHeader,
 		Posts:  publicPosts,
-	}
-
-	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "posts.tmpl.html", data)
@@ -264,14 +267,15 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlContent := blackfriday.Run(content)
-	htmlContent = []byte(replaceImagePaths(string(htmlContent), postName))
+	htmlContent := toHTML(content)
 
-	tmpl, err := template.ParseFiles(
-		headerTmplPath,
-		postTmplPath,
-	)
+	files, err := filepath.Glob(tmplPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -296,12 +300,6 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 		MarkdownHTML: template.HTML(htmlContent),
 	}
 
-	err = tmpl.ExecuteTemplate(w, "header.tmpl.html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	err = tmpl.ExecuteTemplate(w, "post.tmpl.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -312,6 +310,18 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 func servePostAssets(w http.ResponseWriter, r *http.Request) {
 	postName := chi.URLParam(r, "postName")
 	http.StripPrefix("/posts/"+postName+"/", http.FileServer(http.Dir(dataDir+postName+"/"))).ServeHTTP(w, r)
+}
+
+func toHTML(content []byte) []byte {
+	htmlContent := blackfriday.Run(content)
+	htmlContent = []byte(replaceImagePaths(string(htmlContent), ""))
+	replaced, err := replaceCodeParts(htmlContent)
+	if err != nil {
+		log.Println("unable to highlight code block")
+		return htmlContent
+	}
+	htmlContent = []byte(replaced)
+	return htmlContent
 }
 
 func replaceImagePaths(htmlContent string, dirPath string) string {
@@ -353,4 +363,29 @@ func replaceImagePaths(htmlContent string, dirPath string) string {
 	}
 
 	return htmlContent
+}
+
+func replaceCodeParts(mdFile []byte) (string, error) {
+	byteReader := bytes.NewReader(mdFile)
+	doc, err := goquery.NewDocumentFromReader(byteReader)
+	if err != nil {
+		return "", err
+	}
+	// find code-parts via css selector and replace them with highlighted versions
+	doc.Find("code[class*=\"language-\"]").Each(func(i int, s *goquery.Selection) {
+		oldCode := s.Text()
+		formatted, err := syntaxhighlight.AsHTML([]byte(oldCode))
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.SetHtml(string(formatted))
+	})
+	new, err := doc.Html()
+	if err != nil {
+		return "", err
+	}
+	// replace unnecessarily added html tags
+	new = strings.Replace(new, "<html><head></head><body>", "", 1)
+	new = strings.Replace(new, "</body></html>", "", 1)
+	return new, nil
 }
