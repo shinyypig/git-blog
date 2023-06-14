@@ -20,16 +20,16 @@ import (
 
 const dataDir = "data/"
 const repoDir = "git/"
-const tmplPath = dataDir + ".config/templates/*.tmpl.html"
-const postListPath = dataDir + ".pages/postsList.json"
+const tmplPath = dataDir + "_config/templates/*.tmpl.html"
+const postListPath = dataDir + "_pages/postsList.json"
 
 var faviconFiles = map[string]string{
-	"/favicon.ico":                ".config/static/favicon/favicon.ico",
-	"/favicon-16x16.png":          ".config/static/favicon/favicon-16x16.png",
-	"/favicon-32x32.png":          ".config/static/favicon/favicon-32x32.png",
-	"/apple-touch-icon.png":       ".config/static/favicon/apple-touch-icon.png",
-	"/android-chrome-192x192.png": ".config/static/favicon/android-chrome-192x192.png",
-	"/android-chrome-512x512.png": ".config/static/favicon/android-chrome-512x512.png",
+	"/favicon.ico":                "_config/static/favicon/favicon.ico",
+	"/favicon-16x16.png":          "_config/static/favicon/favicon-16x16.png",
+	"/favicon-32x32.png":          "_config/static/favicon/favicon-32x32.png",
+	"/apple-touch-icon.png":       "_config/static/favicon/apple-touch-icon.png",
+	"/android-chrome-192x192.png": "_config/static/favicon/android-chrome-192x192.png",
+	"/android-chrome-512x512.png": "_config/static/favicon/android-chrome-512x512.png",
 }
 
 var config Config
@@ -51,7 +51,9 @@ type MyGitServer struct {
 }
 
 func RunBlogServer() {
-	configJson, _ := os.ReadFile(dataDir + ".config/config.json")
+	extractGitData("_pages")
+	extractGitData("_config")
+	configJson, _ := os.ReadFile(dataDir + "_config/config.json")
 	json.Unmarshal(configJson, &config)
 	AnaylzePosts()
 
@@ -67,7 +69,7 @@ func RunBlogServer() {
 		r.Get("/{pageName}", getPage)
 		r.Get("/posts/{postName}", getPost)
 		r.Get("/posts/{postName}/*", servePostAssets)
-		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+".config/static/"))))
+		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+"_config/static/"))))
 		// git sevice
 		r.Handle("/{gitName}/info/*", gitServer)
 		r.Handle("/{gitName}/git-receive-pack", gitServer)
@@ -130,14 +132,14 @@ func gitUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
-	content, err := os.ReadFile(dataDir + ".pages/index.md")
+	content, err := os.ReadFile(dataDir + "_pages/index.md")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	htmlContent := toHTML(content, ".pages")
+	htmlContent := toHTML(content, "_pages")
 
 	recentPosts := publicPosts
 	if len(recentPosts) > 5 {
@@ -182,12 +184,12 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err := os.ReadFile(dataDir + ".pages/" + pageName + ".md")
+	content, err := os.ReadFile(dataDir + "_pages/" + pageName + ".md")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	htmlContent := toHTML(content, ".pages")
+	htmlContent := toHTML(content, "_pages")
 
 	data := struct {
 		Title        string

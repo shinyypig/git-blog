@@ -14,7 +14,7 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-const postListJson = dataDir + ".pages/postsList.json"
+const postListJson = dataDir + "_pages/postsList.json"
 
 type Post struct {
 	Name   string
@@ -75,7 +75,7 @@ func getPostInfo(name string) (Post, error) {
 	}
 
 	mdContent, err := os.ReadFile(dataDir + name + "/README.md")
-	if err != nil || name == ".pages" || name == ".config" {
+	if err != nil || name == "_pages" || name == "_config" {
 		post = Post{
 			Name:   name,
 			Title:  "",
@@ -163,11 +163,11 @@ func savePosts() {
 	jsonData, _ := json.MarshalIndent(posts, "", "  ")
 	os.WriteFile(postListJson, jsonData, 0644)
 	// git add postList.json and commit and push to local repo
-	cmd := exec.Command("git", "-C", dataDir+".pages", "add", "postsList.json")
+	cmd := exec.Command("git", "-C", dataDir+"_pages", "add", "postsList.json")
 	cmd.Run()
-	cmd = exec.Command("git", "-C", dataDir+".pages", "commit", "-m", "update postList.json")
+	cmd = exec.Command("git", "-C", dataDir+"_pages", "commit", "-m", "update postList.json")
 	cmd.Run()
-	cmd = exec.Command("git", "-C", dataDir+".pages", "push", "origin", "main")
+	cmd = exec.Command("git", "-C", dataDir+"_pages", "push", "origin", "main")
 	cmd.Run()
 	log.Println("postList.json saved")
 }
@@ -269,8 +269,8 @@ func extractGitData(name string) {
 		log.Fatalf("Failed to clone the repository: %v", err)
 	}
 
-	// add local repo for .pages and remove the .git directory except the .pages folder
-	if name != ".pages" {
+	// add local repo for _pages and remove the .git directory except the _pages folder
+	if name != "_pages" {
 		gitDir := filepath.Join(targetDir, ".git")
 		err = os.RemoveAll(gitDir)
 		if err != nil {
@@ -310,8 +310,6 @@ func getPostsFromJson() {
 }
 
 func AnaylzePosts() {
-	extractGitData(".pages")
-	extractGitData(".config")
 	if config.AnaylzePostsOnStart {
 		extractAllGitData()
 		checkAllPosts()
