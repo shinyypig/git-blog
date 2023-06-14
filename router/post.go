@@ -317,7 +317,6 @@ func AnaylzePosts() {
 		checkAllPosts()
 		log.Println("All posts checked")
 	} else {
-		checkAllPosts()
 		getPostsFromJson()
 		log.Println("Skip anaylzing posts")
 	}
