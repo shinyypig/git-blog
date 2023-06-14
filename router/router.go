@@ -137,7 +137,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlContent := toHTML(content)
+	htmlContent := toHTML(content, ".pages")
 
 	recentPosts := publicPosts
 	if len(recentPosts) > 5 {
@@ -187,7 +187,7 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	htmlContent := toHTML(content)
+	htmlContent := toHTML(content, ".pages")
 
 	data := struct {
 		Title        string
@@ -268,7 +268,7 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlContent := toHTML(content)
+	htmlContent := toHTML(content, postName)
 
 	files, err := filepath.Glob(tmplPath)
 	if err != nil {
@@ -313,9 +313,9 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 	http.StripPrefix("/posts/"+postName+"/", http.FileServer(http.Dir(dataDir+postName+"/"))).ServeHTTP(w, r)
 }
 
-func toHTML(content []byte) []byte {
+func toHTML(content []byte, postName string) []byte {
 	htmlContent := blackfriday.Run(content)
-	htmlContent = []byte(replaceImagePaths(string(htmlContent), ""))
+	htmlContent = []byte(replacePaths(string(htmlContent), postName))
 	replaced, err := replaceCodeParts(htmlContent)
 	if err != nil {
 		log.Println("unable to highlight code block")
@@ -325,7 +325,7 @@ func toHTML(content []byte) []byte {
 	return htmlContent
 }
 
-func replaceImagePaths(htmlContent string, dirPath string) string {
+func replacePaths(htmlContent string, dirPath string) string {
 	// Find all <img> tags in the HTML content
 	imgTagStart := "<img"
 	// imgTagEnd := ">"
@@ -361,6 +361,41 @@ func replaceImagePaths(htmlContent string, dirPath string) string {
 
 		// Replace the original <img> tag with the updated one
 		htmlContent = strings.Replace(htmlContent, imgTagStart+imgTags[i], updatedImgTag, 1)
+	}
+
+	// find href links
+	linkTagStart := "<a href="
+	linkTags := strings.Split(htmlContent, linkTagStart)
+
+	for i := 1; i < len(linkTags); i++ {
+		linkTag := linkTagStart + linkTags[i]
+
+		// Find the src attribute within the <img> tag
+		hrefStartIndex := strings.Index(linkTag, "\"")
+		if hrefStartIndex == -1 {
+			continue
+		}
+		hrefEndIndex := strings.Index(linkTag[hrefStartIndex+1:], "\"")
+		if hrefEndIndex == -1 {
+			continue
+		}
+
+		// Extract the image filename from the src attribute
+		href := linkTag[hrefStartIndex+1 : hrefStartIndex+1+hrefEndIndex]
+
+		// If the src is a url, skip it
+		if strings.HasPrefix(href, "http") {
+			continue
+		}
+
+		// Build the correct relative path to the image
+		relLinkPath := filepath.Join(dirPath, href)
+
+		// Update the src attribute with the correct URL
+		updatedLinkTag := strings.Replace(linkTag, href, relLinkPath, 1)
+
+		// Replace the original <img> tag with the updated one
+		htmlContent = strings.Replace(htmlContent, linkTagStart+linkTags[i], updatedLinkTag, 1)
 	}
 
 	return htmlContent

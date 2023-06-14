@@ -75,7 +75,7 @@ func getPostInfo(name string) (Post, error) {
 	}
 
 	mdContent, err := os.ReadFile(dataDir + name + "/README.md")
-	if err != nil {
+	if err != nil || name == ".pages" || name == ".config" {
 		post = Post{
 			Name:   name,
 			Title:  "",
@@ -215,6 +215,14 @@ func extractFirstParagraph(htmlContent string) template.HTML {
 			}
 		}
 	}
+	if len(body) >= 280 {
+		for i := 260; i <= 280; i++ {
+			if body[i] == ' ' {
+				body = body[:i] + " ..."
+				break
+			}
+		}
+	}
 	return template.HTML(body)
 }
 
@@ -309,6 +317,7 @@ func AnaylzePosts() {
 		checkAllPosts()
 		log.Println("All posts checked")
 	} else {
+		checkAllPosts()
 		getPostsFromJson()
 		log.Println("Skip anaylzing posts")
 	}
