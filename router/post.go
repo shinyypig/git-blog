@@ -36,9 +36,6 @@ func checkAllPosts() error {
 
 	for _, file := range files {
 		if file.IsDir() {
-			if strings.HasPrefix(file.Name(), ".") {
-				continue
-			}
 			posts = updatePost(file.Name(), posts)
 		}
 	}
