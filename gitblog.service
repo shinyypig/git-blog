@@ -1,0 +1,10 @@
+[Unit]
+Description=GitBlog Server
+
+[Service]
+ExecStart=/root/git-blog/gitblog
+WorkingDirectory=/root/git-blog
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
