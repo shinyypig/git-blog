@@ -1,5 +1,9 @@
 # Git Blog
 
+![license](https://img.shields.io/github/license/shinyypig/git-blog)
+![last_commit](https://img.shields.io/github/last-commit/shinyypig/git-blog)
+![downloads](https://img.shields.io/github/downloads/shinyypig/git-blog/total)
+
 Git Blog is a lightweight blog system based on Git and Markdown.
 
 Features:
