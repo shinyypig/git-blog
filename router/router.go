@@ -21,7 +21,7 @@ import (
 const dataDir = "data/"
 const repoDir = "git/"
 const tmplPath = dataDir + ".config/templates/*.tmpl.html"
-const postListPath = dataDir + ".pages/postsList.json"
+const postListPath = dataDir + "postsList.json"
 
 var faviconFiles = map[string]string{
 	"/favicon.ico":                ".config/static/favicon/favicon.ico",
@@ -53,6 +53,7 @@ type MyGitServer struct {
 func RunBlogServer() {
 	configJson, _ := os.ReadFile(dataDir + ".config/config.json")
 	json.Unmarshal(configJson, &config)
+	AnaylzePosts()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -88,7 +89,7 @@ func RunBlogServer() {
 
 func createGitServer() *MyGitServer {
 	hooks := &gitkit.HookScripts{
-		PreReceive: `echo "Hello World!"`,
+		PreReceive: `echo "Git Blog"`,
 	}
 
 	originalServer := gitkit.New(gitkit.Config{

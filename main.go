@@ -5,6 +5,5 @@ import (
 )
 
 func main() {
-	go router.AnaylzePosts()
 	router.RunBlogServer()
 }

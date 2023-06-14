@@ -34,46 +34,41 @@ func checkAllPosts() error {
 		return err
 	}
 
+	// for _, file := range files {
+	// 	if file.IsDir() {
+
+	// 	}
+	// }
+	posts = []Post{}
 	for _, file := range files {
 		if file.IsDir() {
-			posts = updatePost(file.Name(), posts)
-		}
-	}
-
-	for _, file := range files {
-		post, err := getPostInfo(file.Name())
-		if err != nil {
+			post, err := getPostInfo(file.Name())
+			if err != nil {
+				continue
+			}
 			posts = append(posts, post)
 		}
 	}
+	sortPosts()
+	getPublicPosts()
+	savePosts()
 
-	posts = sortPosts(posts)
+	return nil
+}
 
+func sortPosts() {
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].Mtime > posts[j].Mtime
+	})
+}
+
+func getPublicPosts() {
 	publicPosts = []Post{}
 	for _, post := range posts {
 		if post.State == "public" {
 			publicPosts = append(publicPosts, post)
 		}
 	}
-
-	jsonData, err := json.MarshalIndent(posts, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(postListJson, jsonData, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func sortPosts(posts []Post) []Post {
-	sort.Slice(posts, func(i, j int) bool {
-		return posts[i].Mtime > posts[j].Mtime
-	})
-	return posts
 }
 
 func getPostInfo(name string) (Post, error) {
@@ -123,8 +118,6 @@ func getPostInfo(name string) (Post, error) {
 	return post, nil
 }
 
-// Mtime:  getFileModifiedTime(dataDir + name).Format("2006-01-02 15:04:05"),
-
 func updatePost(name string, posts []Post) []Post {
 	post, err := getPostInfo(name)
 	if err != nil || post.State == "delete" {
@@ -143,17 +136,9 @@ func updatePost(name string, posts []Post) []Post {
 		}
 	}
 
-	posts = sortPosts(posts)
-
-	publicPosts = []Post{}
-	for _, post := range posts {
-		if post.State == "public" {
-			publicPosts = append(publicPosts, post)
-		}
-	}
-
-	jsonData, _ := json.MarshalIndent(posts, "", "  ")
-	os.WriteFile(postListJson, jsonData, 0644)
+	sortPosts()
+	getPublicPosts()
+	savePosts()
 
 	return posts
 }
@@ -170,13 +155,26 @@ func deletePost(name string, posts []Post) []Post {
 	return posts
 }
 
-func getLatestCommitDate(repoDir string) string {
-	cmd := exec.Command("git", "-C", repoDir, "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d %H:%M:%S")
+func getLatestCommitDate(repoPath string) string {
+	cmd := exec.Command("git", "-C", repoPath, "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d %H:%M:%S")
 	output, err := cmd.Output()
 	if err != nil {
 		return time.Now().Format("2006-01-02 15:04:05")
 	}
 	return strings.TrimSpace(string(output))
+}
+
+func savePosts() {
+	jsonData, _ := json.MarshalIndent(posts, "", "  ")
+	os.WriteFile(postListJson, jsonData, 0644)
+	// git add postList.json and commit and push to local repo
+	cmd := exec.Command("git", "-C", dataDir+".pages", "add", "postsList.json")
+	cmd.Run()
+	cmd = exec.Command("git", "-C", dataDir+".pages", "commit", "-m", "update postList.json")
+	cmd.Run()
+	cmd = exec.Command("git", "-C", dataDir+".pages", "push", "origin", "main")
+	cmd.Run()
+	log.Println("postList.json saved")
 }
 
 func extractTitleAndBody(html []byte) (string, template.HTML, string) {
@@ -268,11 +266,13 @@ func extractGitData(name string) {
 		log.Fatalf("Failed to clone the repository: %v", err)
 	}
 
-	// Remove the .git directory
-	gitDir := filepath.Join(targetDir, ".git")
-	err = os.RemoveAll(gitDir)
-	if err != nil {
-		log.Fatalf("Failed to remove .git directory: %v", err)
+	// add local repo for .pages and remove the .git directory except the .pages folder
+	if name != ".pages" {
+		gitDir := filepath.Join(targetDir, ".git")
+		err = os.RemoveAll(gitDir)
+		if err != nil {
+			log.Fatalf("Failed to remove .git directory: %v", err)
+		}
 	}
 }
 
@@ -291,27 +291,19 @@ func extractAllGitData() {
 	}
 }
 
-func GetPostsFromJson() ([]Post, []Post) {
+func getPostsFromJson() {
 	// read the posts list from json file
 	postList, err := os.ReadFile(postListPath)
 	if err != nil {
-		return []Post{}, []Post{}
+		return
 	}
 	// convert the json to []Post
-	var posts []Post
 	err = json.Unmarshal(postList, &posts)
 	if err != nil {
-		return []Post{}, []Post{}
+		return
 	}
 
-	publicPosts = []Post{}
-	for _, post := range posts {
-		if post.State == "public" {
-			publicPosts = append(publicPosts, post)
-		}
-	}
-
-	return posts, publicPosts
+	getPublicPosts()
 }
 
 func AnaylzePosts() {
@@ -320,7 +312,7 @@ func AnaylzePosts() {
 		checkAllPosts()
 		log.Println("All posts checked")
 	} else {
-		posts, publicPosts = GetPostsFromJson()
+		getPostsFromJson()
 		log.Println("Skip anaylzing posts")
 	}
 }
