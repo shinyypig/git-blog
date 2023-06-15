@@ -135,7 +135,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	content, err := os.ReadFile(dataDir + "_pages/index.md")
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
@@ -148,13 +148,13 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	files, err := filepath.Glob(tmplPath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
@@ -172,7 +172,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.ExecuteTemplate(w, "index.tmpl.html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 }
@@ -186,7 +186,7 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 
 	content, err := os.ReadFile(dataDir + "_pages/" + pageName + ".md")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 	htmlContent := toHTML(content, "_pages")
@@ -203,19 +203,19 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 
 	files, err := filepath.Glob(tmplPath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
 	err = tmpl.ExecuteTemplate(w, "post.tmpl.html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 }
@@ -223,13 +223,13 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 func getPosts(w http.ResponseWriter, r *http.Request) {
 	files, err := filepath.Glob(tmplPath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
@@ -245,7 +245,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.ExecuteTemplate(w, "posts.tmpl.html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 }
@@ -256,17 +256,17 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 	// check if the post is public
 	postInfo, err := getPostInfo(postName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, "Post not found.")
 		return
 	}
 	if postInfo.State != "public" {
-		http.Error(w, "Post not found", http.StatusNotFound)
+		getErrorPage(w, r, "Post not found.")
 		return
 	}
 
 	content, err := os.ReadFile(dataDir + postName + "/README.md")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
@@ -274,13 +274,13 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 
 	files, err := filepath.Glob(tmplPath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		getErrorPage(w, r, err.Error())
 		return
 	}
 
@@ -304,6 +304,36 @@ func getPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tmpl.ExecuteTemplate(w, "post.tmpl.html", data)
+	if err != nil {
+		getErrorPage(w, r, err.Error())
+		return
+	}
+}
+
+func getErrorPage(w http.ResponseWriter, r *http.Request, errMessage string) {
+	files, err := filepath.Glob(tmplPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFiles(files...)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Title  string
+		Header string
+		Error  string
+	}{
+		Title:  config.BlogHeader + " - ERROR",
+		Header: config.BlogHeader,
+		Error:  errMessage,
+	}
+
+	err = tmpl.ExecuteTemplate(w, "error.tmpl.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
