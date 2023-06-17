@@ -51,13 +51,14 @@ If you want to install it as a service, you can use the following command:
 cp gitblog.service /etc/systemd/system/ && systemctl daemon-reload
 ```
 
-Before you copy the service file, you should edit it to make sure the `WorkingDirectory` and `ExecStart` are correct in `gitblog.service`. The default file looks like this:
+Before you copy the service file, you should edit it to make sure the `User`, `WorkingDirectory`, and `ExecStart` are correct in `gitblog.service`. The default file looks like this:
 
 ```bash
 [Unit]
 Description=GitBlog Server
 
 [Service]
+User=root
 ExecStart=/root/git-blog/gitblog
 WorkingDirectory=/root/git-blog
 Restart=always
