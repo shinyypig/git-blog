@@ -1,5 +1,5 @@
 git fetch --all
-git merge origin/main
+git rebase origin/main
 
 go build
 chmod +x ./gitblog
