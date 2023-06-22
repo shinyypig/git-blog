@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/go-chi/chi v1.5.4
+	github.com/gomarkdown/markdown v0.0.0-20230322041520-c84983bdbf2a
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sosedoff/gitkit v0.3.0
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e

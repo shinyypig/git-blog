@@ -13,7 +13,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/russross/blackfriday/v2"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/sosedoff/gitkit"
 	"github.com/sourcegraph/syntaxhighlight"
 )
@@ -346,7 +348,23 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 }
 
 func toHTML(content []byte, postName string) []byte {
-	htmlContent := blackfriday.Run(content)
+	contentStr := string(content)
+	contentStr = strings.ReplaceAll(contentStr, "\\(", "$")
+	contentStr = strings.ReplaceAll(contentStr, "\\)", "$")
+	contentStr = strings.ReplaceAll(contentStr, "\\[", "$$")
+	contentStr = strings.ReplaceAll(contentStr, "\\]", "$$")
+	content = []byte(contentStr)
+
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+	p := parser.NewWithExtensions(extensions)
+	doc := p.Parse(content)
+
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+
+	htmlContent := markdown.Render(doc, renderer)
+
 	htmlContent = []byte(replacePaths(string(htmlContent), postName))
 	replaced, err := replaceCodeParts(htmlContent)
 	if err != nil {
@@ -354,6 +372,7 @@ func toHTML(content []byte, postName string) []byte {
 		return htmlContent
 	}
 	htmlContent = []byte(replaced)
+
 	return htmlContent
 }
 
