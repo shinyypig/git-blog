@@ -1,3 +1,5 @@
 .DS_Store
 gitblog
-data/_*
+.vscode
+data
+git

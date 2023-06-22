@@ -2,8 +2,8 @@
 Description=GitBlog Server
 
 [Service]
-ExecStart=/root/git-blog/gitblog
-WorkingDirectory=/root/git-blog
+ExecStart=/Users/liangliang/Git/Go/git-blog/gitblog
+WorkingDirectory=/Users/liangliang/Git/Go/git-blog
 Restart=always
 User=root
 
