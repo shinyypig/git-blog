@@ -71,7 +71,7 @@ func RunBlogServer() {
 		r.Get("/posts/{postName}", getPost)
 		r.Get("/posts/{postName}/*", servePostAssets)
 		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+"_config/static/"))))
-		r.Handle("/_pages/*", http.StripPrefix("/_pages/", http.FileServer(http.Dir(dataDir+"_pages/"))))
+		r.Handle("/posts/_pages/*", http.StripPrefix("/posts/_pages/", http.FileServer(http.Dir(dataDir+"_pages/"))))
 		// git sevice
 		r.Handle("/{gitName}/info/*", gitServer)
 		r.Handle("/{gitName}/git-receive-pack", gitServer)
@@ -191,7 +191,7 @@ func getPage(w http.ResponseWriter, r *http.Request) {
 		getErrorPage(w, r, err.Error())
 		return
 	}
-	htmlContent := toHTML(content, "_pages")
+	htmlContent := toHTML(content, "/posts/_pages")
 
 	data := struct {
 		Title        string
