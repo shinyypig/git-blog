@@ -67,11 +67,11 @@ func RunBlogServer() {
 	gitServer := createGitServer()
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", getIndex)
-		// r.Get("/{pageName}", getPage)
+		r.Get("/{pageName}", getPage)
 		r.Get("/posts/{postName}", getPost)
 		r.Get("/posts/{postName}/*", servePostAssets)
 		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+"_config/static/"))))
-		// r.Handle("/_pages/*", http.StripPrefix("/_pages/", http.FileServer(http.Dir(dataDir+"_pages/"))))
+		r.Handle("/_pages/*", http.StripPrefix("/_pages/", http.FileServer(http.Dir(dataDir+"_pages/"))))
 		// git sevice
 		r.Handle("/{gitName}/info/*", gitServer)
 		r.Handle("/{gitName}/git-receive-pack", gitServer)
@@ -254,11 +254,6 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 
 func getPost(w http.ResponseWriter, r *http.Request) {
 	postName := chi.URLParam(r, "postName")
-
-	if postName == "posts" || postName == "about" || postName == "contact" {
-		getPage(w, r)
-		return
-	}
 
 	// check if the post is public
 	postInfo, err := getPostInfo(postName)
