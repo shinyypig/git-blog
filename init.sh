@@ -13,7 +13,7 @@ echo "The extras git URL is: $git_url"
 # 替换 gitblog.service 中的路径
 current_path=$(pwd)
 cp gitblog.service.bak gitblog.service
-sed -i.bak "s|/root/git-blog|$current_path|g" gitblog.service && rm gitblog.service.bak
+sed -i.bak "s|/root/git-blog|$current_path|g" gitblog.service
 echo "current_path is $current_path"
 cp gitblog.service /etc/systemd/system/ && systemctl daemon-reload
 
