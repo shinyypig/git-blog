@@ -12,7 +12,9 @@ echo "The extras git URL is: $git_url"
 
 # 替换 gitblog.service 中的路径
 current_path=$(pwd)
+cp gitblog.service.bak gitblog.service
 sed -i.bak "s|/root/git-blog|$current_path|g" gitblog.service && rm gitblog.service.bak
+echo "current_path is $current_path"
 
 # 创建 tmp 文件夹，并克隆 git_url 到该文件夹
 tmp_dir="./tmp"
@@ -32,18 +34,20 @@ for dir in $tmp_dir/*; do
     mkdir "./git/$base_dir"
     cd "./git/$base_dir"
     git init --bare
-    git symbolic-ref HEAD refs/heads/main
+    git symbolic-ref HEAD "refs/heads/main"
 
-    cd -
     # 初始化新的 git 存储库并提交
+    cd "$current_path"
     cd "$dir"
     git init
     git add .
     git commit -m "init"
+    git symbolic-ref HEAD "refs/heads/main"
+    echo "initilize git in $dir"
     
     # 设置新的裸库为远程，并推送
     git remote add origin "$current_path/git/$base_dir"
-    git push origin main
+    git push origin main -f
 
     git clone "$current_path/git/$base_dir" "$current_path/data/$base_dir"
 
