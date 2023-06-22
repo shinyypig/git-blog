@@ -239,7 +239,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		Header string
 		Posts  []Post
 	}{
-		Title:  config.BlogTitle + " - Posts",
+		Title:  config.BlogTitle + " - posts",
 		Header: config.BlogHeader,
 		Posts:  publicPosts,
 	}
