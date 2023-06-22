@@ -39,13 +39,7 @@ Or you can use the `build.sh` script to build it (only tested in debain):
 sh build.sh
 ```
 
-If success, you will get a `gitblog` executable file in the folder. You can run it directly:
-
-```bash
-./gitblog
-```
-
-Then you can run `init.sh` to generate the default configuration, template, and style files, and install the gitblog service:
+If success, you will get a `gitblog` executable file in the folder. Then you can run `init.sh` to generate the default configuration, template, and style files, and install the gitblog service:
 
 ```bash
 sh init.sh
