@@ -45,27 +45,13 @@ If success, you will get a `gitblog` executable file in the folder. You can run 
 ./gitblog
 ```
 
-If you want to install it as a service, you can use the following command:
+Then you can run `init.sh` to generate the default configuration, template, and style files, and install the gitblog service:
 
 ```bash
-cp gitblog.service /etc/systemd/system/ && systemctl daemon-reload
+sh init.sh
 ```
 
-Before you copy the service file, you should edit it to make sure the `User`, `WorkingDirectory`, and `ExecStart` are correct in `gitblog.service`. The default file looks like this:
-
-```bash
-[Unit]
-Description=GitBlog Server
-
-[Service]
-User=root
-ExecStart=/root/git-blog/gitblog
-WorkingDirectory=/root/git-blog
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
+You may be asked to input a git url for the default extras repository, you can leave it blank if you want to use the default extras repository, which is [git-blog-extras](https://github.com/shinyypig/git-blog-extras).
 
 Use the following command to play with the service:
 
@@ -81,6 +67,16 @@ If you want it to start automatically when the system starts, you can use the fo
 ```bash
 systemctl enable gitblog
 ```
+
+## Update
+
+You can simply cd to the git-blog folder and run the following command to update git-blog:
+
+```bash
+sh update.sh
+```
+
+It will pull the latest version from github, build the executable file, and restart the service.
 
 ## Usage
 
