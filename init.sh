@@ -39,7 +39,7 @@ for dir in $tmp_dir/*; do
     # 初始化新的 git 存储库并提交
     cd "$current_path"
     cd "$dir"
-    git init
+    git init --initial-branch=main
     git add .
     git commit -m "init"
     git symbolic-ref HEAD "refs/heads/main"
