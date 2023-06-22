@@ -71,6 +71,7 @@ func RunBlogServer() {
 		r.Get("/posts/{postName}", getPost)
 		r.Get("/posts/{postName}/*", servePostAssets)
 		r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir(dataDir+"_config/static/"))))
+		r.Handle("/_pages/*", http.StripPrefix("/_pages/", http.FileServer(http.Dir(dataDir+"_pages/"))))
 		// git sevice
 		r.Handle("/{gitName}/info/*", gitServer)
 		r.Handle("/{gitName}/git-receive-pack", gitServer)
