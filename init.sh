@@ -15,6 +15,8 @@ current_path=$(pwd)
 cp gitblog.service.bak gitblog.service
 sed -i.bak "s|/root/git-blog|$current_path|g" gitblog.service && rm gitblog.service.bak
 echo "current_path is $current_path"
+cp gitblog.service /etc/systemd/system/ && systemctl daemon-reload
+
 
 # 创建 tmp 文件夹，并克隆 git_url 到该文件夹
 tmp_dir="./tmp"
