@@ -9,7 +9,7 @@ Git Blog is a lightweight blog system based on Git and Markdown.
 
 Features:
 
--   Lightweight, no database required, cost only 8.1MB memory.
+-   Lightweight, no database required, cost about 10MB memory.
 -   Git based, you can use git to manage your blog.
 -   Markdown only, you can write your blog in Markdown.
 -   Repository compatible , a repository can be used as a blog.
