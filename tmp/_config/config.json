@@ -1,0 +1,10 @@
+{
+    "AnaylzePostsOnStart": false,
+    "BlogHeader": "Git Blog",
+    "BlogTitle": "Git Blog",
+    "PostDefaultState": "private",
+    "GitPassword": "admin",
+    "GitUserName": "admin",
+    "WebPort": "8080",
+    "WebIP": ""
+}

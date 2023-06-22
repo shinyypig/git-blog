@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{ .Title }}</title>
+        <link rel="stylesheet" href="/static/style.css" />
+    </head>
+    <body>
+        {{template "header.tmpl.html" .}}
+
+        <div class="markdown-content">
+            <h1>ERROR</h1>
+            <p>{{ .Error }}</p>
+        </div>
+
+        {{template "footer.tmpl.html" .}}
+    </body>
+</html>

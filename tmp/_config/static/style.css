@@ -1,0 +1,284 @@
+/* light theme for markdown */
+body {
+    font-family: "Avenir Next", Helvetica, Arial, sans-serif;
+    padding: 1em;
+    margin: auto;
+    width: 55em;
+    background: #fefefe;
+    color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: top;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: bold;
+}
+
+h1 {
+    border-bottom: 1px solid #cccccc;
+    color: #000000;
+    font-size: 28pt;
+}
+
+h2 {
+    border-bottom: 1px solid #cccccc;
+    color: #000000;
+    font-size: 24px;
+}
+
+h3 {
+    font-size: 18px;
+}
+
+h4 {
+    font-size: 16px;
+}
+
+h5 {
+    font-size: 14px;
+}
+
+h6 {
+    color: #777777;
+    background-color: inherit;
+    font-size: 14px;
+}
+
+hr {
+    height: 1px;
+    border: 0;
+    color: #cccccc;
+    background-color: #cccccc;
+}
+
+p,
+blockquote,
+ul,
+ol,
+dl,
+li,
+table,
+pre {
+    margin: 15px 0;
+    text-align: justify;
+    text-justify: inter-ideograph;
+}
+
+img {
+    max-width: 100%;
+}
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+}
+
+table,
+th,
+td {
+    border: 1px solid #eaeaea;
+    border-radius: 3px;
+    padding: 5px;
+}
+
+tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+a,
+a:visited {
+    color: #4183c4;
+    background-color: inherit;
+    text-decoration: none;
+}
+
+code,
+pre {
+    font-family: Monaco, monospace;
+    font-size: 10pt;
+    border-radius: 5px;
+    background-color: #ececec;
+    color: inherit;
+    margin: 20px;
+    padding: 10px;
+    overflow: auto;
+}
+
+code {
+    border: 1px solid #dddddd;
+    margin: 0 2px;
+    padding: 0 5px;
+}
+
+pre > code {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.pln {
+    color: #333;
+}
+
+ol.linenums {
+    margin-top: 0;
+    margin-bottom: 0;
+    color: #ccc;
+}
+li.L0,
+li.L1,
+li.L2,
+li.L3,
+li.L4,
+li.L5,
+li.L6,
+li.L7,
+li.L8,
+li.L9 {
+    padding-left: 1em;
+    background-color: #fff;
+    list-style-type: decimal;
+}
+/* dark theme for markdown */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #161616;
+        color: #ddd;
+    }
+
+    h1 {
+        border-bottom: 1px solid #cccccc;
+        color: #ddd;
+    }
+
+    h2 {
+        border-bottom: 1px solid #cccccc;
+        color: #ddd;
+    }
+
+    h6 {
+        color: #777777;
+    }
+
+    hr {
+        color: #cccccc;
+        background-color: #cccccc;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid #eaeaea;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f8f8f8;
+    }
+
+    a,
+    a:visited {
+        color: #4183c4;
+    }
+
+    code,
+    pre {
+        background-color: #0e0e0e;
+    }
+
+    code {
+        border: 1px solid #6e6e6e;
+    }
+
+    .pln {
+        color: #d0d0d0;
+    }
+
+    ol.linenums {
+        color: #d2d2d2;
+    }
+    li.L0,
+    li.L1,
+    li.L2,
+    li.L3,
+    li.L4,
+    li.L5,
+    li.L6,
+    li.L7,
+    li.L8,
+    li.L9 {
+        background-color: #fff;
+    }
+}
+
+/* css for web pages */
+.markdown-content {
+    text-align: left;
+    padding: 20px;
+    width: 50em;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 50px;
+}
+
+.post {
+    display: flex;
+    flex-direction: column;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 20px;
+    min-height: 150px;
+    margin-bottom: 50px;
+}
+
+.post-content {
+    flex: 1;
+}
+
+.post-foot {
+    display: flex;
+    flex-direction: row;
+}
+
+.post-modified-time {
+    flex: 7;
+    align-self: flex-end;
+    font-size: 12px;
+    color: #666;
+    margin-top: 10px;
+    text-align: left;
+}
+
+.post-more-link {
+    flex: 3;
+    text-align: right;
+    align-self: flex-end;
+    font-size: 12px;
+    color: #666;
+    margin-top: 10px;
+}
+
+.header {
+    width: 60em;
+}
+
+.footer {
+    width: 60em;
+    padding-bottom: 50px;
+}
+
+.footer-info {
+    flex: 7;
+    align-self: flex-end;
+    font-size: 12px;
+    color: #666;
+    margin-top: 10px;
+    text-align: right;
+}

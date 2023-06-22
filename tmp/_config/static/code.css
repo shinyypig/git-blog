@@ -1,0 +1,45 @@
+/*! Color themes for Google Code Prettify | MIT License | github.com/jmblog/color-themes-for-google-code-prettify */
+@media screen {
+    .str {
+        color: #183691;
+    }
+    .kwd {
+        color: #a71d5d;
+    }
+    .com {
+        color: #969896;
+    }
+    .typ {
+        color: #0086b3;
+    }
+    .lit {
+        color: #0086b3;
+    }
+    .pun {
+        color: #3a8846;
+    }
+    .opn {
+        color: #79c0ff;
+    }
+    .clo {
+        color: #79c0ff;
+    }
+    .tag {
+        color: navy;
+    }
+    .atn {
+        color: #795da3;
+    }
+    .atv {
+        color: #183691;
+    }
+    .dec {
+        color: #79c0ff;
+    }
+    .var {
+        color: teal;
+    }
+    .fun {
+        color: #900;
+    }
+}
