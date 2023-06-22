@@ -23,7 +23,6 @@ import (
 const dataDir = "data/"
 const repoDir = "git/"
 const tmplPath = dataDir + "_config/templates/*.tmpl.html"
-const postListPath = dataDir + "_pages/postsList.json"
 
 var faviconFiles = map[string]string{
 	"/favicon.ico":                "_config/static/favicon/favicon.ico",

@@ -14,7 +14,7 @@ import (
 	"github.com/russross/blackfriday/v2"
 )
 
-const postListJson = dataDir + "_pages/postsList.json"
+const postListPath = dataDir + "_pages/postsList.json"
 
 type Post struct {
 	Name   string
@@ -161,7 +161,7 @@ func getLatestCommitDate(repoPath string) string {
 
 func savePosts() {
 	jsonData, _ := json.MarshalIndent(posts, "", "  ")
-	os.WriteFile(postListJson, jsonData, 0644)
+	os.WriteFile(postListPath, jsonData, 0644)
 	// git add postList.json and commit and push to local repo
 	cmd := exec.Command("git", "-C", dataDir+"_pages", "add", "postsList.json")
 	cmd.Run()
