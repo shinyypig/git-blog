@@ -500,10 +500,10 @@ func replacePaths(htmlContent string, dirPath string) string {
 		}
 
 		// Build the correct relative path to the image
-		relLinkPath := filepath.Join(dirPath, href) + ` target="_blank"`
+		relLinkPath := filepath.Join(dirPath, href)
 
 		// Update the src attribute with the correct URL
-		updatedLinkTag := strings.Replace(linkTag, href, relLinkPath, 1)
+		updatedLinkTag := strings.Replace(linkTag, "\""+href+"\"", "\""+relLinkPath+"\""+"target=\"_blank\"", 1)
 
 		// Replace the original <img> tag with the updated one
 		htmlContent = strings.Replace(htmlContent, linkTagStart+linkTags[i], updatedLinkTag, 1)
