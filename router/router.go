@@ -378,12 +378,21 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// find the post in the list of posts
+		var post Post
+		for _, p := range posts {
+			if p.Name == postName {
+				post = p
+				break
+			}
+		}
+
 		data := struct {
 			Title        string
 			Header       string
 			MarkdownHTML template.HTML
 		}{
-			Title:        config.BlogHeader + " - " + postName,
+			Title:        config.BlogHeader + " - " + post.Name,
 			Header:       config.BlogHeader,
 			MarkdownHTML: template.HTML(htmlContent),
 		}
@@ -491,7 +500,7 @@ func replacePaths(htmlContent string, dirPath string) string {
 		}
 
 		// Build the correct relative path to the image
-		relLinkPath := filepath.Join(dirPath, href)
+		relLinkPath := filepath.Join(dirPath, href) + ` target="_blank"`
 
 		// Update the src attribute with the correct URL
 		updatedLinkTag := strings.Replace(linkTag, href, relLinkPath, 1)
