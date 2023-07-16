@@ -356,9 +356,9 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := strings.TrimPrefix(r.URL.Path, "/posts/"+postName+"/")
-	if filepath.Ext(filePath) == ".md" {
-		content, err := os.ReadFile(filePath)
+	fileName := strings.TrimPrefix(r.URL.Path, "/posts/"+postName+"/")
+	if filepath.Ext(fileName) == ".md" {
+		content, err := os.ReadFile(dataDir + postName + "/" + fileName)
 		if err != nil {
 			getErrorPage(w, r, err.Error())
 			return
