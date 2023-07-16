@@ -344,7 +344,58 @@ func getErrorPage(w http.ResponseWriter, r *http.Request, errMessage string) {
 
 func servePostAssets(w http.ResponseWriter, r *http.Request) {
 	postName := chi.URLParam(r, "postName")
-	http.StripPrefix("/posts/"+postName+"/", http.FileServer(http.Dir(dataDir+postName+"/"))).ServeHTTP(w, r)
+
+	// check if the post is public
+	postInfo, err := getPostInfo(postName)
+	if err != nil {
+		getErrorPage(w, r, "Post not found.")
+		return
+	}
+	if postInfo.State != "public" {
+		getErrorPage(w, r, "Post not found.")
+		return
+	}
+
+	filePath := strings.TrimPrefix(r.URL.Path, "/posts/"+postName+"/")
+	if filepath.Ext(filePath) == ".md" {
+		content, err := os.ReadFile(dataDir + postName + "/README.md")
+		if err != nil {
+			getErrorPage(w, r, err.Error())
+			return
+		}
+
+		htmlContent := toHTML(content, postName)
+
+		files, err := filepath.Glob(tmplPath)
+		if err != nil {
+			getErrorPage(w, r, err.Error())
+			return
+		}
+
+		tmpl, err := template.ParseFiles(files...)
+		if err != nil {
+			getErrorPage(w, r, err.Error())
+			return
+		}
+
+		data := struct {
+			Title        string
+			Header       string
+			MarkdownHTML template.HTML
+		}{
+			Title:        config.BlogHeader + " - " + extractH1Title(string(htmlContent)),
+			Header:       config.BlogHeader,
+			MarkdownHTML: template.HTML(htmlContent),
+		}
+
+		err = tmpl.ExecuteTemplate(w, "post.tmpl.html", data)
+		if err != nil {
+			getErrorPage(w, r, err.Error())
+			return
+		}
+	} else {
+		http.StripPrefix("/posts/"+postName+"/", http.FileServer(http.Dir(dataDir+postName+"/"))).ServeHTTP(w, r)
+	}
 }
 
 func toHTML(content []byte, postName string) []byte {
