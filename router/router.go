@@ -364,7 +364,7 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		htmlContent := toHTML(content, postName)
+		htmlContent := toHTML(content, "")
 
 		files, err := filepath.Glob(tmplPath)
 		if err != nil {
