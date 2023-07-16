@@ -383,7 +383,7 @@ func servePostAssets(w http.ResponseWriter, r *http.Request) {
 			Header       string
 			MarkdownHTML template.HTML
 		}{
-			Title:        config.BlogHeader + " - " + extractH1Title(string(htmlContent)),
+			Title:        config.BlogHeader + " - " + postName,
 			Header:       config.BlogHeader,
 			MarkdownHTML: template.HTML(htmlContent),
 		}
