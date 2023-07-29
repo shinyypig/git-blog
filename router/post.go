@@ -163,7 +163,7 @@ func getLatestCommitDate(repoPath string) string {
 }
 
 func getLastestCommitHash(repoPath string) string {
-	cmd := exec.Command("git", "-C", repoPath, "rev-parse HEAD")
+	cmd := exec.Command("git", "-C", repoPath, "rev-parse", "main")
 	output, err := cmd.Output()
 	if err != nil {
 		return ""
