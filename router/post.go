@@ -23,6 +23,7 @@ type Post struct {
 	Banner string
 	Mtime  string
 	State  string
+	Hash   string
 }
 
 var posts []Post
@@ -83,6 +84,7 @@ func getPostInfo(name string) (Post, error) {
 			Banner: "",
 			Mtime:  getLatestCommitDate(repoDir + name),
 			State:  "private",
+			Hash:   getLastestCommitHash(repoDir + name),
 		}
 		return post, nil
 	}
@@ -109,6 +111,7 @@ func getPostInfo(name string) (Post, error) {
 		Banner: dataDir + name + "/" + banner,
 		Mtime:  getLatestCommitDate(repoDir + name),
 		State:  state,
+		Hash:   getLastestCommitHash(repoDir + name),
 	}
 	return post, nil
 }
@@ -155,6 +158,15 @@ func getLatestCommitDate(repoPath string) string {
 	output, err := cmd.Output()
 	if err != nil {
 		return time.Now().Format("2006-01-02 15:04:05")
+	}
+	return strings.TrimSpace(string(output))
+}
+
+func getLastestCommitHash(repoPath string) string {
+	cmd := exec.Command("git", "-C", repoPath, "rev-parse head")
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
 	}
 	return strings.TrimSpace(string(output))
 }
