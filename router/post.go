@@ -104,6 +104,9 @@ func getPostInfo(name string) (Post, error) {
 
 	htmlContent := blackfriday.Run(mdContent)
 	title, body, banner := extractTitleAndBody(htmlContent)
+	print("title:", title)
+	print("body:", body)
+	print("banner:", banner)
 	post = Post{
 		Name:   name,
 		Title:  title,
@@ -209,6 +212,13 @@ func extractH1Title(htmlContent string) string {
 			title = strings.TrimSpace(htmlContent[index+4 : index+endIndex])
 		}
 	}
+	title = strings.Replace(title, "&ldquo;", "\"", -1)
+	title = strings.Replace(title, "&rdquo;", "\";", -1)
+	title = strings.Replace(title, "&lsquo;", "'", -1)
+	title = strings.Replace(title, "&rsquo;", "'", -1)
+	title = strings.Replace(title, "&amp;", "&", -1)
+	title = strings.Replace(title, "&gt;", ">", -1)
+	title = strings.Replace(title, "&lt;", "<", -1)
 	return title
 }
 
